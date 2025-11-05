@@ -15,7 +15,7 @@ plotly
 
 # Hopsworks + feature store
 hopsworks==4.2.2
-hsfs==4.2.2
+hsfs==3.7.2
 confluent-kafka
 
 # For fetching and caching Open-Meteo data
