@@ -24,3 +24,5 @@ retry-requests
 
 # Utility
 python-dotenv
+
+xgboost==2.0.3
