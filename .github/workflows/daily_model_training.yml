@@ -20,7 +20,8 @@ jobs:
 
       - name: ⚙️ Install Dependencies
         run: |
-          pip install -r requirements.txt || pip install pandas numpy hopsworks xgboost scikit-learn joblib
+          pip install -r requirements.txt || pip install pandas numpy "hopsworks[python]" scikit-learn joblib
+          pip install "hopsworks[python]"  # installs confluent-kafka and other optional dependencies
 
       - name: 🧠 Train and Register Model
         env:
