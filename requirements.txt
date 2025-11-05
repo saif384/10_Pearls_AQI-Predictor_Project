@@ -26,3 +26,5 @@ retry-requests
 python-dotenv
 
 xgboost==2.0.3
+hopsworks[python]==4.2.*
+confluent-kafka
