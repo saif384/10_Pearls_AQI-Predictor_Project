@@ -8,7 +8,6 @@ on:
 jobs:
   fetch-and-process:
     runs-on: ubuntu-latest
-
     steps:
       - name: 📦 Checkout Repository
         uses: actions/checkout@v4
@@ -18,27 +17,17 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: ⚙️ Install and Run Fetch Script
+      - name: ⚙️ Install Dependencies
+        run: |
+          pip install -r requirements.txt || pip install pandas numpy hopsworks openmeteo-requests requests-cache retry-requests xgboost scikit-learn joblib
+
+      - name: 🌍 Run Data Fetching Script
         env:
           HOPSWORKS_API_KEY: ${{ secrets.HOPSWORKS_API_KEY }}
           HOPSWORKS_PROJECT: ${{ secrets.HOPSWORKS_PROJECT }}
           LAT: ${{ secrets.LAT }}
           LON: ${{ secrets.LON }}
         run: |
-          echo "Upgrading pip..."
-          pip install --upgrade pip
-
-          echo "Installing dependencies..."
-          pip install --no-cache-dir -r requirements.txt
-
-          echo "Force reinstalling dotenv..."
-          pip install --no-cache-dir --upgrade python-dotenv
-
-          echo "Checking installed packages..."
-          pip show python-dotenv || echo "python-dotenv missing!"
-          python -m pip freeze | grep dotenv || echo "dotenv not found!"
-
-          echo "Running fetch script..."
           python src/features/fetch_raw_data.py
 
       - name: 🔧 Process and Engineer Features
