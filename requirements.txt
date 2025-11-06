@@ -14,10 +14,10 @@ uvicorn
 streamlit
 plotly
 
+
 # Hopsworks + feature store
-# hopsworks
-# hsfs
-hopsworks==4.2.*
+hopsworks[python]==4.2.*
+
 
 # For fetching and caching Open-Meteo data
 openmeteo-requests
