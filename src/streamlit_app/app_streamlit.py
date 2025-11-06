@@ -147,7 +147,8 @@ from datetime import datetime
 # ==============================================
 # 1️⃣ Backend API URL
 # ==============================================
-API_URL = "http://127.0.0.1:8000"  # Replace with deployed FastAPI URL if hosted
+# API_URL = "http://127.0.0.1:8000"  # Replace with deployed FastAPI URL if hosted
+API_URL = "https://aqi-fastapi-backend.onrender.com"
 
 st.set_page_config(page_title="AQI Prediction Dashboard", page_icon="🌍", layout="wide")
 
