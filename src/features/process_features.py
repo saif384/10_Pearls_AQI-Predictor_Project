@@ -93,32 +93,28 @@ final_df = df[['timestamp'] + numeric +
               ['season_spring','season_summer','season_winter','hour_sin','hour_cos'] +
               [c for c in df.columns if c.startswith('dow_')] + ['AQI']]
 
-# --- ✅ (7) Convert boolean to int for compatibility ---
-for col in ['season_spring', 'season_summer', 'season_winter']:
-    final_df[col] = final_df[col].astype(int)
+# --- ✅ Fix numeric dtypes ---
+int_cols = ["season_spring", "season_summer", "season_winter"]
+for col in int_cols:
+    if col in final_df.columns:
+        final_df[col] = final_df[col].astype("int32")
 
+# Fix AQI column casing
+if "AQI" in final_df.columns:
+    final_df.rename(columns={"AQI": "aqi"}, inplace=True)
 
-# --- (4) Insert to processed Feature Group ---
+# --- Insert ---
 processed_fg = fs.get_or_create_feature_group(
     name="aqi_hourly_features",
     version=2,
     primary_key=["timestamp"],
     description="Processed and engineered hourly features with AQI target"
 )
-# Ensure correct dtypes before insert
-for col in ["season_spring", "season_summer", "season_winter"]:
-    if col in final_df.columns:
-        final_df[col] = final_df[col].astype(int)
-
-# Optional: also make sure your AQI column name matches lowercase
-if "AQI" in final_df.columns:
-    final_df.rename(columns={"AQI": "aqi"}, inplace=True)
 
 processed_fg.insert(final_df, write_options={"wait_for_job": False})
+print("✅ Processed data inserted successfully!")
 
-processed_fg.insert(final_df, write_options={"wait_for_job": False})
-print("✅ Processed data inserted to Hopsworks Feature Group!")
 
-print('Debugging owais')
-print("Total rows:", len(raw_df))
-print("Unique timestamps:", raw_df['timestamp'].nunique())
+# print('Debugging owais')
+# print("Total rows:", len(raw_df))
+# print("Unique timestamps:", raw_df['timestamp'].nunique())
