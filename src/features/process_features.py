@@ -97,7 +97,7 @@ final_df = df[['timestamp'] + numeric +
 int_cols = ["season_spring", "season_summer", "season_winter"]
 for col in int_cols:
     if col in final_df.columns:
-        final_df[col] = final_df[col].astype("int32")
+        final_df[col] = final_df[col].astype("int64")
 
 # Fix AQI column casing
 if "AQI" in final_df.columns:
