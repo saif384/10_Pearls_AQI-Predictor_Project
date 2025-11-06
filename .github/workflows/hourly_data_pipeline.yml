@@ -19,9 +19,17 @@ jobs:
 
       - name: ⚙️ Install Dependencies
         run: |
+          echo "🔄 Removing any pre-installed Hopsworks or Kafka..."
           pip uninstall -y hopsworks hsfs hopsworks-common confluent-kafka || true
-          pip install --no-cache-dir "hopsworks[python]==4.2.*" confluent-kafka==2.3.0
-          pip install -r requirements.txt 
+
+          echo "📦 Installing correct versions (no cache)..."
+          pip install --no-cache-dir "confluent-kafka==2.3.0"
+          pip install --no-cache-dir "hopsworks[python]==4.2.0"
+          pip install --no-cache-dir -r requirements.txt
+          
+          echo "✅ Final versions:"
+          pip show hopsworks | grep Version
+          pip show confluent-kafka | grep Version
 
 
       - name: 🌍 Run Data Fetching Script
