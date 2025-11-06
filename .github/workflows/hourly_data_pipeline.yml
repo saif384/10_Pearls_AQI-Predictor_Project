@@ -19,8 +19,10 @@ jobs:
 
       - name: ⚙️ Install Dependencies
         run: |
+          pip uninstall -y hopsworks hsfs hopsworks-common confluent-kafka || true
+          pip install --no-cache-dir "hopsworks[python]==4.2.*" confluent-kafka==2.3.0
           pip install -r requirements.txt 
-          
+
 
       - name: 🌍 Run Data Fetching Script
         env:
