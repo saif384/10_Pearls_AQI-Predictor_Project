@@ -85,7 +85,9 @@ df = pd.get_dummies(df, columns=['day_of_week'], prefix='dow')
 
 # scale numeric
 scaler = RobustScaler()
-numeric = ['relative_humidity_2m','pm10','pm2_5','ozone','nitrogen_dioxide']
+# dropping relative humididty
+# numeric = ['relative_humidity_2m','pm10','pm2_5','ozone','nitrogen_dioxide']
+numeric = ['pm10','pm2_5','ozone','nitrogen_dioxide']
 df[numeric] = scaler.fit_transform(df[numeric])
 
 # select final features
@@ -93,6 +95,7 @@ final_df = df[['timestamp'] + numeric +
               ['season_spring','season_summer','season_winter','hour_sin','hour_cos'] +
               [c for c in df.columns if c.startswith('dow_')] + ['AQI']]
 
+print(f'owais is looking for processed features df columns: {final_df.columns.tolist()}')
 # --- ✅ Fix numeric dtypes ---
 int_cols = ["season_spring", "season_summer", "season_winter"]
 for col in int_cols:
