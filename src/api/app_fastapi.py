@@ -592,58 +592,98 @@ def predict(request: AQIRequest):
         "r2": best_r2
     }
 
-# ==============================================================
-# 9️⃣ Predict Next 3 Days AQI (Non-Autoregressive)
-# ==============================================================
+# # ==============================================================
+# # 9️⃣ Predict Next 3 Days AQI (Non-Autoregressive)
+# # ==============================================================
+# @app.post("/forecast_3day")
+# def forecast_3day(request: AQIRequest):
+#     base_features = preprocess_input(request)
+#     now = datetime.utcnow()
+#     forecasts = []
+
+#     for i in range(1, 4):
+#         future = now + timedelta(days=i)
+#         fdict = base_features.copy()
+
+#         # Update temporal encodings for future day
+#         fdict["hour_sin"] = np.sin(2 * np.pi * future.hour / 24)
+#         fdict["hour_cos"] = np.cos(2 * np.pi * future.hour / 24)
+#         dow = future.weekday()
+#         for d in range(7):
+#             fdict[f"dow_{d}"] = 1 if d == dow else 0
+#         month = future.month
+#         fdict["season_spring"] = 1 if month in [3, 4, 5] else 0
+#         fdict["season_summer"] = 1 if month in [6, 7, 8] else 0
+#         fdict["season_winter"] = 1 if month in [12, 1, 2] else 0
+
+#         df_future = pd.DataFrame([fdict])[features]
+
+#         if best_model_type == "lstm":
+#             scaler = MinMaxScaler()
+#             X_scaled = scaler.fit_transform(df_future)
+#             X_reshaped = np.expand_dims(X_scaled, axis=0)
+#             pred = model.predict(X_reshaped)[0][0]
+#         else:
+#             pred = model.predict(df_future)[0]
+
+#         forecasts.append({
+#             "day": f"Day {i}",
+#             "date": future.strftime("%Y-%m-%d"),
+#             "predicted_AQI": float(pred)
+#         })
+
+#     # return {
+#     #     "forecast": forecasts,
+#     #     "model_used": best_model_name,
+#     #     "model_version": best_model_meta.version,
+#     #     "best_r2": best_r2
+#     # }
+#     return {
+#     "forecast": forecast_df.to_dict(orient="records"),
+#     "model_used": best_model.name if best_model else "unknown",
+#     "version": best_model.version if best_model else "N/A",
+#     "r2": best_r2 if best_r2 is not None else "N/A"
+# }
+
+
+# print("🚀 API ready — serving best model automatically!")
 @app.post("/forecast_3day")
-def forecast_3day(request: AQIRequest):
-    base_features = preprocess_input(request)
-    now = datetime.utcnow()
-    forecasts = []
+def forecast_3day(features: dict):
+    try:
+        # Load best model info (selected earlier in your script)
+        global best_model, best_r2
+        model_name = getattr(best_model, "name", "unknown")
+        model_version = getattr(best_model, "version", "N/A")
 
-    for i in range(1, 4):
-        future = now + timedelta(days=i)
-        fdict = base_features.copy()
+        # Convert incoming JSON to DataFrame
+        input_df = pd.DataFrame([features])
 
-        # Update temporal encodings for future day
-        fdict["hour_sin"] = np.sin(2 * np.pi * future.hour / 24)
-        fdict["hour_cos"] = np.cos(2 * np.pi * future.hour / 24)
-        dow = future.weekday()
-        for d in range(7):
-            fdict[f"dow_{d}"] = 1 if d == dow else 0
-        month = future.month
-        fdict["season_spring"] = 1 if month in [3, 4, 5] else 0
-        fdict["season_summer"] = 1 if month in [6, 7, 8] else 0
-        fdict["season_winter"] = 1 if month in [12, 1, 2] else 0
+        # Predict for 72 hours (3 days)
+        predictions = []
+        timestamps = []
 
-        df_future = pd.DataFrame([fdict])[features]
+        current_time = datetime.now()
+        for i in range(72):
+            future_time = current_time + timedelta(hours=i + 1)
+            pred = model.predict(input_df)[0]
+            predictions.append(pred)
+            timestamps.append(future_time)
 
-        if best_model_type == "lstm":
-            scaler = MinMaxScaler()
-            X_scaled = scaler.fit_transform(df_future)
-            X_reshaped = np.expand_dims(X_scaled, axis=0)
-            pred = model.predict(X_reshaped)[0][0]
-        else:
-            pred = model.predict(df_future)[0]
+            # (Optional) you can update input_df values for next iteration if model is autoregressive
 
-        forecasts.append({
-            "day": f"Day {i}",
-            "date": future.strftime("%Y-%m-%d"),
-            "predicted_AQI": float(pred)
+        # Build DataFrame for return
+        forecast_df = pd.DataFrame({
+            "timestamp": timestamps,
+            "predicted_AQI": predictions
         })
 
-    # return {
-    #     "forecast": forecasts,
-    #     "model_used": best_model_name,
-    #     "model_version": best_model_meta.version,
-    #     "best_r2": best_r2
-    # }
-    return {
-    "forecast": forecast_df.to_dict(orient="records"),
-    "model_used": best_model.name if best_model else "unknown",
-    "version": best_model.version if best_model else "N/A",
-    "r2": best_r2 if best_r2 is not None else "N/A"
-}
+        # ✅ Return all model info
+        return {
+            "forecast": forecast_df.to_dict(orient="records"),
+            "model_used": model_name,
+            "version": model_version,
+            "r2": best_r2 if best_r2 is not None else "N/A"
+        }
 
-
-print("🚀 API ready — serving best model automatically!")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
