@@ -360,7 +360,8 @@ with tab2:
                 # Use correct column name (check your actual JSON keys)
                 #df ko forecast_df kia hhai
         
-                x_col = 'timestamp' if 'timestamp' in forecast_df.columns else 'date'
+                x_col = 'timestamp' if 'timestamp' in df.columns else 'date'
+
                 # fig = px.bar(df, x="date", y="predicted_AQI", color="predicted_AQI",
                 #              color_continuous_scale="YlOrRd",
                 #              title="Predicted AQI for Next 3 Days")

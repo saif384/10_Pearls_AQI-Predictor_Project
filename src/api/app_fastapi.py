@@ -632,16 +632,16 @@ def forecast_3day(request: AQIRequest):
             "predicted_AQI": float(pred)
         })
 
-    # return {
-    #     "forecast": forecasts,
-    #     "model_used": best_model_name,
-    #     "model_version": best_model_meta.version,
-    #     "best_r2": best_r2
-    # }
     return {
-    "forecast": forecast_df.to_dict(orient="records"),
-    "model_used": best_model.name if best_model else "unknown",
-    "version": best_model.version if best_model else "N/A",
-    "r2": best_r2 if best_r2 is not None else "N/A"
-}
+        "forecast": forecasts,
+        "model_used": best_model_name,
+        "model_version": best_model_meta.version,
+        "best_r2": best_r2
+    }
+    # return {
+    # "forecast": forecast_df.to_dict(orient="records"),
+    # "model_used": best_model.name if best_model else "unknown",
+    # "version": best_model.version if best_model else "N/A",
+    # "r2": best_r2 if best_r2 is not None else "N/A"
+# }
 
