@@ -274,7 +274,7 @@ dow = datetime.now().weekday()
 season = st.sidebar.selectbox("Season", ["spring", "summer", "winter"])
 
 input_data = {
-    "relative_humidity_2m": humidity,
+    # "relative_humidity_2m": humidity,
     "pm10": pm10,
     "pm2_5": pm25,
     "ozone": ozone,
