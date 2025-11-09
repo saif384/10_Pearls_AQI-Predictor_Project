@@ -138,16 +138,8 @@ print(f"✅ Loaded {best_model_type.upper()} model successfully!")
 # ==============================================================
 # 5️⃣ Define Input Schema
 # ==============================================================
-# class AQIRequest(BaseModel):
-#     # relative_humidity_2m: float
-#     pm10: float
-#     pm2_5: float
-#     ozone: float
-#     nitrogen_dioxide: float
-#     hour: int
-#     day_of_week: int
-#     season: str
-class AQIForecastRequest(BaseModel):
+class AQIRequest(BaseModel):
+    # relative_humidity_2m: float
     pm10: float
     pm2_5: float
     ozone: float
@@ -155,6 +147,14 @@ class AQIForecastRequest(BaseModel):
     hour: int
     day_of_week: int
     season: str
+# class AQIForecastRequest(BaseModel):
+#     pm10: float
+#     pm2_5: float
+#     ozone: float
+#     nitrogen_dioxide: float
+#     hour: int
+#     day_of_week: int
+#     season: str
 
 # ==============================================================
 # 6️⃣ Helper: Encode Input Features
@@ -202,9 +202,13 @@ def root():
 # 8️⃣ Predict Single AQI
 # ==============================================================
 @app.post("/predict")
-def predict(request: AQIForecastRequest):
+def predict(request: AQIRequest):
+    # features_dict = preprocess_input(request)
+    # df = pd.DataFrame([features_dict])[features]
     features_dict = preprocess_input(request)
-    df = pd.DataFrame([features_dict])[features]
+    df = pd.DataFrame([features_dict])
+    df = df[[f for f in features if f in df.columns]]  # <-- filter to only model features
+
 
     if best_model_type == "lstm":
         scaler = MinMaxScaler()
@@ -224,7 +228,7 @@ def predict(request: AQIForecastRequest):
 # 9️⃣ Predict Next 3 Days AQI (Non-Autoregressive)
 # ==============================================================
 @app.post("/forecast_3day")
-def forecast_3day(request: AQIForecastRequest):
+def forecast_3day(request: AQIRequest):
     base_features = preprocess_input(request)
     now = datetime.utcnow()
     forecasts = []
@@ -244,7 +248,10 @@ def forecast_3day(request: AQIForecastRequest):
         fdict["season_summer"] = 1 if month in [6, 7, 8] else 0
         fdict["season_winter"] = 1 if month in [12, 1, 2] else 0
 
-        df_future = pd.DataFrame([fdict])[features]
+        # df_future = pd.DataFrame([fdict])[features]
+        df_future = pd.DataFrame([fdict])
+        df_future = df_future[[f for f in features if f in df_future.columns]]  # <-- filter
+
 
         if best_model_type == "lstm":
             scaler = MinMaxScaler()
