@@ -200,32 +200,60 @@ def root():
         }
     }
 
-# ==============================================================
-# 8️⃣ Predict Single AQI
-# ==============================================================
-@app.post("/predict")
-def predict(request: AQIRequest):
-    # features_dict = preprocess_input(request)
-    # df = pd.DataFrame([features_dict])[features]
-    features_dict = preprocess_input(request)
-    df = pd.DataFrame([features_dict])
-    df = df[[f for f in features if f in df.columns]]  # <-- filter to only model features
+# # ==============================================================
+# # 8️⃣ Predict Single AQI
+# # ==============================================================
+# @app.post("/predict")
+# def predict(request: AQIRequest):
+#     # features_dict = preprocess_input(request)
+#     # df = pd.DataFrame([features_dict])[features]
+#     features_dict = preprocess_input(request)
+#     df = pd.DataFrame([features_dict])
+#     df = df[[f for f in features if f in df.columns]]  # <-- filter to only model features
 
+
+#     if best_model_type == "lstm":
+#         scaler = MinMaxScaler()
+#         X_scaled = lstm_scaler.transform(df)  # ✅ use sa
+#         # X_scaled = scaler.fit_transform(df)
+#         X_reshaped = np.expand_dims(X_scaled, axis=0)
+#         pred = model.predict(X_reshaped)[0][0]
+#     else:
+#         pred = model.predict(df)[0]
+
+#     return {
+#         "predicted_AQI": float(pred),
+#         "model_used": best_model_name,
+#         "r2": best_r2
+#     }
+# predict predicting only todays without user input
+# ============================================================== 
+# Predict Today's AQI
+# ============================================================== 
+@app.get("/predict")
+def predict_today():
+    # Load last row of processed data
+    fg = fs.get_feature_group("aqi_hourly_features", version=3)
+    df = fg.read().sort_values("timestamp").reset_index(drop=True)
+    last_row = df.iloc[[-1]]  # keep as DataFrame
+
+    # Keep only model features
+    last_row = last_row[[f for f in features if f in last_row.columns]]
 
     if best_model_type == "lstm":
-        scaler = MinMaxScaler()
-        X_scaled = lstm_scaler.transform(df)  # ✅ use sa
-        # X_scaled = scaler.fit_transform(df)
+        X_scaled = lstm_scaler.transform(last_row)
         X_reshaped = np.expand_dims(X_scaled, axis=0)
         pred = model.predict(X_reshaped)[0][0]
     else:
-        pred = model.predict(df)[0]
+        pred = model.predict(last_row)[0]
 
     return {
-        "predicted_AQI": float(pred),
+        "predicted_AQI_today": float(pred),
         "model_used": best_model_name,
         "r2": best_r2
     }
+
+
 
 # ==============================================================
 # 9️⃣ Predict Next 3 Days AQI (Non-Autoregressive) ---  having user input
@@ -284,31 +312,93 @@ def predict(request: AQIRequest):
     # "r2": best_r2 if best_r2 is not None else "N/A"
 # }
 
-# without user input
+# without user input-
 # ============================================================== 
 # 9️⃣ Predict Next 3 Days AQI (Data-driven, no user input)
 # ============================================================== 
-@app.post("/forecast_3day")
-def forecast_3day():
-    # 1️⃣ Load processed dataset used for training
-    fg = fs.get_feature_group("aqi_hourly_features", version=2)
+# @app.post("/forecast_3day")
+# def forecast_3day():
+#     # 1️⃣ Load processed dataset used for training
+#     fg = fs.get_feature_group("aqi_hourly_features", version=2)
+#     df = fg.read().sort_values("timestamp").reset_index(drop=True)
+
+#     # Ensure all features for prediction
+#     df_features = df[features].copy()
+    
+#     forecasts = []
+    
+#     # 2️⃣ Take last row as base input
+#     last_row = df_features.iloc[-1].to_dict()
+    
+#     now = datetime.utcnow()
+    
+#     for i in range(1, 4):
+#         future = now + timedelta(days=i)
+#         fdict = last_row.copy()
+
+#         # Update temporal features: hour, day-of-week, season
+#         fdict["hour_sin"] = np.sin(2 * np.pi * future.hour / 24)
+#         fdict["hour_cos"] = np.cos(2 * np.pi * future.hour / 24)
+#         dow = future.weekday()
+#         for d in range(7):
+#             fdict[f"dow_{d}"] = 1 if d == dow else 0
+#         month = future.month
+#         fdict["season_spring"] = 1 if month in [3, 4, 5] else 0
+#         fdict["season_summer"] = 1 if month in [6, 7, 8] else 0
+#         fdict["season_winter"] = 1 if month in [12, 1, 2] else 0
+
+#         df_future = pd.DataFrame([fdict])
+#         df_future = df_future[[f for f in features if f in df_future.columns]]
+
+#         # 3️⃣ Predict using the best model
+#         if best_model_type == "lstm":
+#             X_scaled = lstm_scaler.transform(df_future)
+#             X_reshaped = np.expand_dims(X_scaled, axis=0)
+#             pred = model.predict(X_reshaped)[0][0]
+            
+#             # Update last_row sequence with predicted value if needed
+#             last_row.update(fdict)  # keep features consistent
+#         else:
+#             pred = model.predict(df_future)[0]
+#             # For next day, keep last_row as base (non-autoregressive)
+        
+#         forecasts.append({
+#             "day": f"Day {i}",
+#             "date": future.strftime("%Y-%m-%d"),
+#             "predicted_AQI": float(pred)
+#         })
+
+#     return {
+#         "forecast": forecasts,
+#         "model_used": best_model_name,
+#         "model_version": best_model_meta.version,
+#         "best_r2": best_r2
+#     }
+
+# excluding today and autoregressive
+
+# ============================================================== 
+# Forecast Next 3 Days AQI (Autoregressive)
+# ============================================================== 
+@app.get("/forecast_3day")
+def forecast_next_3_days_autoregressive():
+    # Load last row of processed data as base
+    fg = fs.get_feature_group("aqi_hourly_features", version=3)
     df = fg.read().sort_values("timestamp").reset_index(drop=True)
+    last_row = df.iloc[[-1]].copy()  # DataFrame
 
-    # Ensure all features for prediction
-    df_features = df[features].copy()
-    
+    # Keep only model features
+    last_row = last_row[[f for f in features if f in last_row.columns]]
+
     forecasts = []
-    
-    # 2️⃣ Take last row as base input
-    last_row = df_features.iloc[-1].to_dict()
-    
-    now = datetime.utcnow()
-    
-    for i in range(1, 4):
-        future = now + timedelta(days=i)
-        fdict = last_row.copy()
+    current_input = last_row.copy()
+    now = pd.to_datetime(last_row['timestamp'].values[0])
 
-        # Update temporal features: hour, day-of-week, season
+    for i in range(1, 4):  # next 3 days
+        future = now + pd.Timedelta(days=i)
+        fdict = current_input.iloc[0].to_dict()
+
+        # Update temporal features
         fdict["hour_sin"] = np.sin(2 * np.pi * future.hour / 24)
         fdict["hour_cos"] = np.cos(2 * np.pi * future.hour / 24)
         dow = future.weekday()
@@ -322,26 +412,30 @@ def forecast_3day():
         df_future = pd.DataFrame([fdict])
         df_future = df_future[[f for f in features if f in df_future.columns]]
 
-        # 3️⃣ Predict using the best model
         if best_model_type == "lstm":
             X_scaled = lstm_scaler.transform(df_future)
             X_reshaped = np.expand_dims(X_scaled, axis=0)
             pred = model.predict(X_reshaped)[0][0]
-            
-            # Update last_row sequence with predicted value if needed
-            last_row.update(fdict)  # keep features consistent
         else:
             pred = model.predict(df_future)[0]
-            # For next day, keep last_row as base (non-autoregressive)
-        
+
+        # Store forecast
         forecasts.append({
             "day": f"Day {i}",
             "date": future.strftime("%Y-%m-%d"),
             "predicted_AQI": float(pred)
         })
 
+        # Update current_input for next day (autoregressive)
+        # Replace pollutant/humidity features with predicted AQI if you want
+        # Here, we assume AQI influences next step input
+        # If your model uses only pollutant data, you may need external forecast or keep constant
+        # Example: keep same pollutants but update AQI feature if exists
+        # Since your current features do not include AQI itself, we just propagate the last row for next step
+        current_input = df_future.copy()
+
     return {
-        "forecast": forecasts,
+        "forecast_next_3_days_autoregressive": forecasts,
         "model_used": best_model_name,
         "model_version": best_model_meta.version,
         "best_r2": best_r2
