@@ -51,7 +51,7 @@ raw_df['AQI'] = raw_df[['pm25_sub', 'pm10_sub', 'no2_sub', 'so2_sub', 'co_sub', 
 
 # --- (3) Feature engineering ---
 df = raw_df.copy()
-df = df.drop(['sulphur_dioxide', 'carbon_monoxide'], axis=1)
+df = df.drop(['relative_humidity_2m','sulphur_dioxide', 'carbon_monoxide'], axis=1)
 
 # extract time features
 df['timestamp'] = pd.to_datetime(df['timestamp'])
@@ -107,15 +107,31 @@ if "AQI" in final_df.columns:
     final_df.rename(columns={"AQI": "aqi"}, inplace=True)
 
 # --- Insert ---
+# processed_fg = fs.get_or_create_feature_group(
+#     name="aqi_hourly_features",
+#     version=2,
+#     primary_key=["timestamp"],
+#     description="Processed and engineered hourly features with AQI target"
+# )
+
+# processed_fg = fs.get_feature_group(name="aqi_hourly_features", version=2)
+# processed_fg.update_schema(remove_columns=["relative_humidity_2m"])
+# processed_fg.insert(final_df, write_options={"wait_for_job": False})
+# print("✅ Processed data inserted successfully!")
+
+# new one
+# --- Create a new feature group without relative_humidity_2m ---
 processed_fg = fs.get_or_create_feature_group(
     name="aqi_hourly_features",
-    version=2,
+    version=3,  # new version
     primary_key=["timestamp"],
-    description="Processed and engineered hourly features with AQI target"
+    description="Processed and engineered hourly features without relative_humidity_2m"
 )
 
+# --- Insert the processed dataframe ---
 processed_fg.insert(final_df, write_options={"wait_for_job": False})
-print("✅ Processed data inserted successfully!")
+
+print("✅ Processed data inserted successfully into new feature group (v3)!")
 
 
 # print('Debugging owais')
