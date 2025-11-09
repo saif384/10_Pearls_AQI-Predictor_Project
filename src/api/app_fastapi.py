@@ -217,7 +217,7 @@ print(f"✅ Loaded {best_model_type.upper()} model successfully!")
 # 5️⃣ Define Input Schema
 # ==============================================================
 class AQIRequest(BaseModel):
-    relative_humidity_2m: float
+    # relative_humidity_2m: float
     pm10: float
     pm2_5: float
     ozone: float
