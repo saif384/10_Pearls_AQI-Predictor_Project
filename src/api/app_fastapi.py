@@ -230,28 +230,62 @@ def root():
 # ============================================================== 
 # Predict Today's AQI
 # ============================================================== 
+# @app.get("/predict")
+# def predict_today():
+#     # Load last row of processed data
+#     fg = fs.get_feature_group("aqi_hourly_features", version=3)
+#     df = fg.read().sort_values("timestamp").reset_index(drop=True)
+#     last_row = df.iloc[[-1]]  # keep as DataFrame
+
+#     # Keep only model features
+#     last_row = last_row[[f for f in features if f in last_row.columns]]
+
+#     if best_model_type == "lstm":
+#         X_scaled = lstm_scaler.transform(last_row)
+#         X_reshaped = np.expand_dims(X_scaled, axis=0)
+#         pred = model.predict(X_reshaped)[0][0]
+#     else:
+#         pred = model.predict(last_row)[0]
+
+#     return {
+#         "predicted_AQI_today": float(pred),
+#         "model_used": best_model_name,
+#         "r2": best_r2
+#     }
 @app.get("/predict")
 def predict_today():
-    # Load last row of processed data
-    fg = fs.get_feature_group("aqi_hourly_features", version=3)
-    df = fg.read().sort_values("timestamp").reset_index(drop=True)
-    last_row = df.iloc[[-1]]  # keep as DataFrame
+    """
+    Predicts today's AQI using the latest available record 
+    from the processed feature group (aqi_hourly_features v3).
+    """
+    try:
+        # ✅ Fetch feature group and get the latest data point
+        fg = fs.get_feature_group("aqi_hourly_features", version=3)
+        df = fg.read().sort_values("timestamp").reset_index(drop=True)
+        last_row = df.iloc[[-1]]  # DataFrame with one row
 
-    # Keep only model features
-    last_row = last_row[[f for f in features if f in last_row.columns]]
+        # ✅ Align columns with model features
+        valid_features = [f for f in features if f in last_row.columns]
+        X = last_row[valid_features]
 
-    if best_model_type == "lstm":
-        X_scaled = lstm_scaler.transform(last_row)
-        X_reshaped = np.expand_dims(X_scaled, axis=0)
-        pred = model.predict(X_reshaped)[0][0]
-    else:
-        pred = model.predict(last_row)[0]
+        # ✅ Predict using the trained model
+        if best_model_type == "lstm":
+            X_scaled = lstm_scaler.transform(X)
+            X_reshaped = np.expand_dims(X_scaled, axis=0)
+            pred = model.predict(X_reshaped)[0][0]
+        else:
+            pred = model.predict(X)[0]
 
-    return {
-        "predicted_AQI_today": float(pred),
-        "model_used": best_model_name,
-        "r2": best_r2
-    }
+        # ✅ Return clean, clear response
+        return {
+            "predicted_AQI_today": float(pred),
+            "timestamp_used": str(last_row["timestamp"].values[0]),
+            "model_used": best_model_name,
+            "r2": best_r2
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
 
 
 
