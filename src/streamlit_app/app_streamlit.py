@@ -360,6 +360,7 @@ with tab2:
                 st.error(f"❌ API Error: {res.text}")
         except Exception as e:
             # st.error(f"⚠️ Connection error: {e}")
+            print(e)
             error_msg = str(e) if e is not None else "Unknown error"
             st.error(f"⚠️ Connection error: {error_msg}")
                 
