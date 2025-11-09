@@ -150,7 +150,8 @@ with tab2:
         try:
             # Old (wrong)
             # response = requests.post(f"{API_URL}/forecast_3day", json=payload)
-            res = requests.post(f"{API_URL}/forecast_3day", json=input_data)
+            # res = requests.post(f"{API_URL}/forecast_3day", json=input_data)
+            res = requests.get(f"{API_URL}/forecast_3day")
             if res.status_code == 200:
                 data = res.json()
                 forecast = data["forecast"]
