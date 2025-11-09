@@ -287,22 +287,27 @@ def root():
 #     except Exception as e:
 #         return {"error": str(e)}
 
-from fastapi import Request
+from fastapi import APIRouter
+import numpy as np
+import pandas as pd
 
-@app.api_route("/predict", methods=["GET", "POST"])
-def predict_today(request: Request):
+@app.get("/predict")  # <-- only GET is needed
+def predict_today():
     """
-    Predict today's AQI using latest processed row.
-    Accepts GET (no body) or POST (body ignored here).
+    Predict today's AQI using the latest processed record
+    from the Hopsworks feature store.
     """
     try:
+        # ✅ Read last record from the latest processed data
         fg = fs.get_feature_group("aqi_hourly_features", version=3)
         df = fg.read().sort_values("timestamp").reset_index(drop=True)
         last_row = df.iloc[[-1]].copy()
 
+        # ✅ Keep only valid model features
         valid_features = [f for f in features if f in last_row.columns]
         X = last_row[valid_features]
 
+        # ✅ Predict based on model type
         if best_model_type == "lstm":
             X_scaled = lstm_scaler.transform(X)
             X_reshaped = np.expand_dims(X_scaled, axis=0)
@@ -310,16 +315,16 @@ def predict_today(request: Request):
         else:
             pred = model.predict(X)[0]
 
+        # ✅ Return structured response
         return {
             "predicted_AQI": float(pred),
             "date": str(last_row["timestamp"].values[0]),
             "model_used": best_model_name,
             "r2": best_r2
         }
+
     except Exception as e:
         return {"error": str(e)}
-
-
 
 # ==============================================================
 # 9️⃣ Predict Next 3 Days AQI (Non-Autoregressive) ---  having user input
