@@ -458,9 +458,10 @@ def forecast_next_3_days_autoregressive():
     df = fg.read().sort_values("timestamp").reset_index(drop=True)
     last_row = df.iloc[[-1]].copy()  # DataFrame
     timestamp = last_row['timestamp'].values[0]
+    now = pd.to_datetime(timestamp)
 
     # Keep only model features
-    last_row = last_row[[f for f in features if f in last_row.columns]]
+    # last_row = last_row[[f for f in features if f in last_row.columns]]
 
     forecasts = []
     current_input = last_row.copy()
