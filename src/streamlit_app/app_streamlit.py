@@ -302,7 +302,12 @@ with tab1:
                 r2 = result.get("r2", None)
 
                 st.success(f"Predicted AQI: **{aqi:.2f}**")
-                st.info(f"🧠 Model Used: `{model_used}` | R² = {r2:.3f}")
+                if r2 is not None:
+                    st.info(f"🧠 Model Used: `{model_used}` | R² = {r2:.3f}")
+                else:
+                    st.info(f"🧠 Model Used: `{model_used}` | R² = N/A")
+    
+                # st.info(f"🧠 Model Used: `{model_used}` | R² = {r2:.3f}")
 
                 # AQI category visualization
                 if aqi <= 50:
@@ -347,7 +352,11 @@ with tab2:
                 r2 = data.get("best_r2", None)
 
                 df = pd.DataFrame(forecast)
-                st.success(f"✅ Forecast generated successfully using `{model_used}` (v{version}) | R² = {r2:.3f}")
+                # st.success(f"✅ Forecast generated successfully using `{model_used}` (v{version}) | R² = {r2:.3f}")
+                if r2 is not None:
+                    st.success(f"🧠 Forecast generated successfully using: `{model_used}` (v{version}) | R² = {r2:.3f}")
+                else:
+                    st.success(f"🧠 Forecast generated successfully using: `{model_used}` (v{version}) | R² = N/A")    
 
                 fig = px.bar(df, x="date", y="predicted_AQI", color="predicted_AQI",
                              color_continuous_scale="YlOrRd",
