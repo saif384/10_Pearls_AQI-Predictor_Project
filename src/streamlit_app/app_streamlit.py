@@ -109,7 +109,7 @@ with tab2:
             if res.status_code == 200:
                 data = res.json()
                 forecast = data.get("forecast") or data.get("forecast_next_3_days_autoregressive")
-                forecast = data["forecast"]
+                # forecast = data["forecast"]
                 model_used = data.get("model_used", "unknown")
                 version = data.get("model_version", "N/A")
                 r2 = data.get("best_r2", None)
