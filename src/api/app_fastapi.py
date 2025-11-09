@@ -41,49 +41,6 @@ best_model_name = None
 best_model_type = None
 best_r2 = -999
 
-# for name in model_names:
-#     try:
-#         models = mr.get_models(name=name)
-#         for m in models:
-#             if m.metrics and "r2" in m.metrics:
-#                 if m.metrics["r2"] > best_r2:
-#                     best_r2 = m.metrics["r2"]
-#                     best_model_meta = m
-#                     best_model_name = name
-#                     best_model_type = (
-#                         "lstm" if "lstm" in name else
-#                         "ridge" if "ridge" in name else
-#                         "xgb"
-#                     )
-#     except Exception as e:
-#         print(f"⚠️ Could not read model {name}: {e}")
-
-# if best_model_meta is None:
-#     raise ValueError("❌ No model with R² found in Hopsworks Model Registry!")
-
-# another version
-# for name in model_names:
-#     try:
-#         # Get the latest version of the model
-#         m = mr.get_model(name, version=None)  # latest version
-#         metrics = getattr(m, "metrics", None)
-        
-#         if metrics and "r2" in metrics:
-#             r2 = metrics["r2"]
-#             if r2 > best_r2:
-#                 best_r2 = r2
-#                 best_model_meta = m
-#                 best_model_name = name
-#                 best_model_type = (
-#                     "lstm" if "lstm" in name else
-#                     "ridge" if "ridge" in name else
-#                     "xgb"
-#                 )
-#     except Exception as e:
-#         print(f"⚠️ Could not read model {name}: {e}")
-
-# if best_model_meta is None:
-#     raise ValueError("❌ No model with R² found among latest versions of the 3 models!")
 
 for name in model_names:
     try:
@@ -138,41 +95,6 @@ print(f"✅ Best model selected: {best_model_name} (v{best_model_meta.version}, 
 # ==============================================================
 model_dir = best_model_meta.download()
 
-# if best_model_type == "lstm":
-#     model = load_model(os.path.join(model_dir, "lstm_model.h5"))
-#     features = [
-#         'relative_humidity_2m', 'pm10', 'pm2_5', 'ozone', 'nitrogen_dioxide',
-#         'season_spring', 'season_summer', 'season_winter',
-#         'hour_sin', 'hour_cos',
-#         'dow_0', 'dow_1', 'dow_2', 'dow_3', 'dow_4', 'dow_5', 'dow_6'
-#     ]
-# import os
-# if best_model_type == "lstm":
-#     model = load_model(os.path.join(model_dir, "lstm_model.h5"))
-#     features = [
-#         'pm10', 'pm2_5', 'ozone', 'nitrogen_dioxide',
-#         'season_spring', 'season_summer', 'season_winter',
-#         'hour_sin', 'hour_cos',
-#         'dow_0', 'dow_1', 'dow_2', 'dow_3', 'dow_4', 'dow_5', 'dow_6'
-#     ]
-# else:
-#     # bundle = joblib.load(
-#     #     os.path.join(model_dir, f"{best_model_type}_model.pkl")
-#     # )
-#     # model = bundle["model"]
-#     # features = bundle["features"]
-#     # Download model
-#     model_dir = best_model_meta.download()  # returns local folder path
-#     print("Files in model_dir:", os.listdir(model_dir))
-#     best_model_file=os.path.join(model_dir, f"{best_model_type}_model.pkl")
-#     bundle = joblib.load(best_model_file)
-#     model = bundle["model"]
-#     features = bundle["features"]
-
-
-
-# print("✅ Model loaded successfully!")
-
 import os
 import glob
 import joblib
@@ -216,8 +138,16 @@ print(f"✅ Loaded {best_model_type.upper()} model successfully!")
 # ==============================================================
 # 5️⃣ Define Input Schema
 # ==============================================================
-class AQIRequest(BaseModel):
-    # relative_humidity_2m: float
+# class AQIRequest(BaseModel):
+#     # relative_humidity_2m: float
+#     pm10: float
+#     pm2_5: float
+#     ozone: float
+#     nitrogen_dioxide: float
+#     hour: int
+#     day_of_week: int
+#     season: str
+class AQIForecastRequest(BaseModel):
     pm10: float
     pm2_5: float
     ozone: float
@@ -272,7 +202,7 @@ def root():
 # 8️⃣ Predict Single AQI
 # ==============================================================
 @app.post("/predict")
-def predict(request: AQIRequest):
+def predict(request: AQIForecastRequest):
     features_dict = preprocess_input(request)
     df = pd.DataFrame([features_dict])[features]
 
@@ -294,7 +224,7 @@ def predict(request: AQIRequest):
 # 9️⃣ Predict Next 3 Days AQI (Non-Autoregressive)
 # ==============================================================
 @app.post("/forecast_3day")
-def forecast_3day(request: AQIRequest):
+def forecast_3day(request: AQIForecastRequest):
     base_features = preprocess_input(request)
     now = datetime.utcnow()
     forecasts = []
