@@ -290,7 +290,7 @@ def predict(request: AQIRequest):
 @app.post("/forecast_3day")
 def forecast_3day():
     # 1️⃣ Load processed dataset used for training
-    fg = fs.get_feature_group("aqi_hourly_features", version=3)
+    fg = fs.get_feature_group("aqi_hourly_features", version=2)
     df = fg.read().sort_values("timestamp").reset_index(drop=True)
 
     # Ensure all features for prediction
