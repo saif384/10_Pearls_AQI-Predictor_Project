@@ -95,7 +95,7 @@ final_df = df[['timestamp'] + numeric +
               ['season_spring','season_summer','season_winter','hour_sin','hour_cos'] +
               [c for c in df.columns if c.startswith('dow_')] + ['AQI']]
 
-print(f'owais is looking for processed features df columns: {final_df.columns.tolist()}')
+print(f'saif is looking for processed features df columns: {final_df.columns.tolist()}')
 # --- ✅ Fix numeric dtypes ---
 int_cols = ["season_spring", "season_summer", "season_winter"]
 for col in int_cols:
