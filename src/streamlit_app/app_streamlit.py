@@ -11,6 +11,7 @@ from datetime import datetime
 # 🌍 AQI Prediction Dashboard
 # ==============================================
 API_URL = "https://aqi-fastapi-backend.onrender.com"  # Update if running locally
+# API_URL = "http://127.0.0.1:8000"
 st.set_page_config(page_title="AQI Prediction Dashboard", page_icon="🌍", layout="wide")
 
 st.title("🌍 Air Quality Index (AQI) Prediction Dashboard")
